@@ -1,0 +1,403 @@
+{#
+    Menu principal.
+    Pour ajouter un onglet : une ligne dans `items` (route, icône, libellé).
+    L'onglet est "actif" quand la route courante correspond.
+#}
+{% set route = app.request.attributes.get('_route') %}
+
+{% set items = [
+    {route: 'app_accueil_index',    icon: 'bi-house',               label: 'Accueil'},
+    {route: 'app_anime_index',      icon: 'bi-tv',                  label: 'Anime'},
+    {route: 'app_manga_index',      icon: 'bi-book',                label: 'Manga'},
+    {route: 'app_musique_index',    icon: 'bi-music-note-beamed',   label: 'Musique'},
+    {route: 'app_classement_index', icon: 'bi-trophy',              label: 'Classement'},
+    {route: 'app_sortie_index',     icon: 'bi-calendar-event',      label: 'Sorties récentes'},
+] %}
+
+<style>
+    body {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    /* Variables locales : le header fonctionne même sans s2o.css à jour */
+    .s2o-header {
+        --s2o-red: #c8102e;
+        --s2o-red-hot: #f0382d;
+        --s2o-red-dark: #8a0b20;
+        --s2o-blue: #19b4ff;
+        --s2o-gold: #ffc928;
+        --s2o-night: #16171b;
+        --s2o-slate: #383b45;
+        --s2o-slate-2: #4b4f5c;
+        --s2o-slate-3: #5d6270;
+        --s2o-steel-2: #c6cad3;
+        --s2o-steel-3: #f3f4f7;
+        --s2o-text: #1f2128;
+        --s2o-bolt: linear-gradient(90deg, #19b4ff, #c8102e 55%, #ffc928);
+        --s2o-cut: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+        --s2o-cut-lg: polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+    }
+
+    /* ======================================================
+           HEADER : gris foncé + éclats vifs
+           ====================================================== */
+    .s2o-header {
+        margin: 0;
+        background-color: #16171b;
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+        background:
+            /* éclats vifs (bleu / rouge / jaune) */
+            linear-gradient(
+                115deg,
+                transparent 0 58%,
+                rgba(25, 180, 255, 0.3) 58% 59.5%,
+                transparent 59.5% 62%,
+                rgba(240, 56, 45, 0.38) 62% 65%,
+                transparent 65% 67%,
+                rgba(255, 201, 40, 0.34) 67% 68.5%,
+                transparent 68.5%
+            ),
+            /* fines rayures */
+            repeating-linear-gradient(
+                    115deg,
+                    transparent 0 22px,
+                    rgba(255, 255, 255, 0.045) 22px 24px
+                ),
+            /* base grise dégradée */ #16171b;
+        border-bottom: 4px solid transparent;
+        border-image: var(--s2o-bolt) 1;
+        box-shadow: 0 8px 24px rgba(30, 32, 40, 0.28);
+    }
+
+    .s2o-header .navbar {
+        padding: 0.55rem 0;
+    }
+
+    /* ----- Logo : même fond que le header, il s'intègre sans cadre ----- */
+    .s2o-brand {
+        display: inline-block;
+        margin-right: 1.5rem;
+        background: transparent;
+        transition:
+            filter 0.2s,
+            transform 0.2s;
+    }
+
+    .s2o-brand:hover {
+        filter: brightness(1.15) saturate(1.2);
+        transform: translateY(-1px);
+    }
+
+    .s2o-logo-plate {
+        display: block;
+        padding: 0;
+        background: transparent;
+    }
+
+    .s2o-logo {
+        height: 72px;
+        width: auto;
+        display: block;
+    }
+
+    /* ----- Liens du menu ----- */
+    .s2o-header .nav-link {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-family: "Exo 2", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        font-size: 1.02rem;
+        color: rgba(255, 255, 255, 0.85);
+        padding: 0.6rem 1.15rem;
+        clip-path: var(--s2o-cut);
+        transition:
+            color 0.15s,
+            background-color 0.15s;
+    }
+
+    .s2o-header .nav-link i {
+        font-size: 1.05rem;
+        color: var(--s2o-blue);
+        transition:
+            color 0.15s,
+            transform 0.2s;
+    }
+
+    /* barre qui se déploie au survol */
+    .s2o-header .nav-link::after {
+        content: "";
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 0;
+        height: 3px;
+        background: var(--s2o-bolt);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.25s ease;
+    }
+
+    .s2o-header .nav-link:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.14);
+    }
+
+    .s2o-header .nav-link:hover i {
+        transform: translateY(-2px) scale(1.12);
+    }
+
+    .s2o-header .nav-link:hover::after {
+        transform: scaleX(1);
+    }
+
+    .s2o-header .nav-link.active {
+        color: #fff;
+        background: linear-gradient(
+            135deg,
+            var(--s2o-red-hot),
+            var(--s2o-red) 65%,
+            var(--s2o-red-dark)
+        );
+        box-shadow: 0 4px 14px rgba(200, 16, 46, 0.35);
+    }
+
+    .s2o-header .nav-link.active i {
+        color: var(--s2o-gold);
+    }
+
+    .s2o-header .nav-link.active::after {
+        transform: scaleX(1);
+        background: var(--s2o-gold);
+    }
+
+    /* ----- Recherche ----- */
+    .s2o-search {
+        position: relative;
+    }
+
+    .s2o-search i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--s2o-blue);
+    }
+
+    .s2o-search input {
+        background: var(--s2o-slate-3);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        padding-left: 2.3rem;
+        min-width: 190px;
+    }
+
+    .s2o-search input::placeholder {
+        color: #c3c7d2;
+    }
+
+    /* ----- Bouton burger ----- */
+    .navbar-toggler {
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .navbar-toggler:focus {
+        box-shadow: 0 0 0 0.2rem rgba(25, 180, 255, 0.4);
+    }
+
+    /* ----- Menu utilisateur (pseudo + dropdown) ----- */
+    .s2o-user-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.25rem 0.9rem 0.25rem 0.3rem;
+        font-family: "Exo 2", sans-serif;
+        font-style: italic;
+        font-weight: 700;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        transition:
+            background-color 0.15s,
+            border-color 0.15s;
+    }
+
+    .s2o-user-btn:hover,
+    .s2o-user-btn.show {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.24);
+        border-color: var(--s2o-gold);
+    }
+
+    .s2o-user-btn::after {
+        margin-left: 0.2rem;
+        color: var(--s2o-gold);
+    }
+
+    .s2o-avatar {
+        display: inline-grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        font-style: normal;
+        font-weight: 800;
+        color: var(--s2o-night);
+        background: linear-gradient(135deg, var(--s2o-gold), var(--s2o-red-hot));
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    }
+
+    .s2o-user-name {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .s2o-dropdown {
+        min-width: 13rem;
+        padding: 0.4rem;
+        background: var(--s2o-steel-3);
+        border: 1px solid var(--s2o-steel-2);
+        border-top: 3px solid var(--s2o-red);
+        border-radius: 0.6rem;
+        box-shadow: 0 14px 34px rgba(30, 32, 40, 0.25);
+    }
+
+    .s2o-dropdown .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.55rem 0.8rem;
+        border-radius: 0.4rem;
+        font-weight: 600;
+        color: var(--s2o-text);
+        border-left: 3px solid transparent;
+    }
+
+    .s2o-dropdown .dropdown-item i {
+        color: var(--s2o-blue);
+    }
+
+    .s2o-dropdown .dropdown-item:hover {
+        background: #fff;
+        border-left-color: var(--s2o-red);
+        color: var(--s2o-red);
+    }
+
+    .s2o-dropdown .dropdown-item.text-danger i {
+        color: var(--s2o-red);
+    }
+
+    @media (max-width: 991.98px) {
+        .s2o-header .navbar-collapse {
+            padding: 1rem 0;
+        }
+
+        .s2o-header .nav-link {
+            clip-path: none;
+            border-radius: 0.5rem;
+        }
+
+        .s2o-header .nav-link::after {
+            display: none;
+        }
+
+        .s2o-logo {
+            height: 52px;
+        }
+
+        .s2o-logo-plate {
+            padding: 0.25rem 1.2rem;
+        }
+    }
+</style>
+
+<header class="s2o-header">
+    <div class="container">
+        <nav class="navbar navbar-expand-lg" aria-label="Navigation principale">
+            <a class="navbar-brand m-0 s2o-brand" href="{{ path('app_accueil_index') }}" aria-label="Serie2Ouf – Accueil">
+                <span class="s2o-logo-plate">
+                    <img src="{{ asset('images/logo-serie2ouf.png') }}" alt="Serie2Ouf" class="s2o-logo">
+                </span>
+            </a>
+
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarS2O"
+                aria-controls="navbarS2O"
+                aria-expanded="false"
+                aria-label="Ouvrir le menu"
+            >
+                <i class="bi bi-list fs-3"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarS2O">
+                <ul class="navbar-nav mx-lg-auto mb-3 mb-lg-0 gap-lg-1">
+                    {% for item in items %}
+                        <li class="nav-item">
+                            <a
+                                class="nav-link {{ route == item.route ? 'active' : '' }}"
+                                href="{{ path(item.route) }}"
+                                {% if route == item.route %}aria-current="page"{% endif %}
+                            >
+                                <i class="bi {{ item.icon }}"></i>
+                                {{ item.label }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-2">
+                    {% if app.user %}
+                        {#
+                            Nom affiché : on prend le pseudo de l'entité User s'il existe
+                            (getUsername() / getPseudo()), sinon la partie avant le @ de l'email.
+                            Adapte `username` si ton champ s'appelle autrement (ex: pseudo).
+                        #}
+                        {% set displayName = app.user.username is defined
+                            ? app.user.username
+                            : (app.user.userIdentifier|split('@')|first) %}
+
+                        <div class="dropdown">
+                            <button
+                                class="s2o-user-btn dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
+                                <span class="s2o-avatar">{{ displayName|first|upper }}</span>
+                                <span class="s2o-user-name">{{ displayName }}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-lg-end s2o-dropdown">
+                                <li>
+                                    <a class="dropdown-item" href="{{ path('app_profil_index') }}">
+                                        <i class="bi bi-person-fill"></i> Mon profil
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{{ path('app_logout') }}">
+                                        <i class="bi bi-box-arrow-right"></i> Déconnexion
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a class="btn btn-sm btn-outline-light" href="{{ path('app_login') }}">Connexion</a>
+                        <a class="btn btn-sm btn-primary" href="{{ path('app_register') }}">S'inscrire</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>
